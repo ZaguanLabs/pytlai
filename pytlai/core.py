@@ -284,6 +284,8 @@ class Pytlai:
         translated_count = 0
         if cache_misses and self._provider:
             texts = [node.text for node in cache_misses]
+            # Collect per-text contexts for disambiguation
+            text_contexts = [node.context for node in cache_misses]
 
             results = self._provider.translate(
                 texts=texts,
@@ -291,6 +293,7 @@ class Pytlai:
                 source_lang=self.source_lang,
                 excluded_terms=self._config.excluded_terms,
                 context=self._config.context,
+                text_contexts=text_contexts if any(text_contexts) else None,
             )
 
             # Cache and store results

@@ -151,11 +151,15 @@ class PythonProcessor(ContentProcessor):
                         node_id = str(uuid.uuid4())
                         text_hash = hashlib.sha256(docstring.encode()).hexdigest()
 
+                        # Build context from the code structure
+                        context = self._build_docstring_context(node, node_type)
+
                         text_node = TextNode(
                             id=node_id,
                             text=docstring,
                             hash=text_hash,
                             node_type=node_type,
+                            context=context,
                             metadata={
                                 "line": const.lineno,
                                 "end_line": const.end_lineno or const.lineno,
@@ -215,11 +219,15 @@ class PythonProcessor(ContentProcessor):
                 node_id = str(uuid.uuid4())
                 text_hash = hashlib.sha256(comment_text.encode()).hexdigest()
 
+                # Build context from surrounding code
+                context = self._build_comment_context(content, token.start[0])
+
                 text_node = TextNode(
                     id=node_id,
                     text=comment_text,
                     hash=text_hash,
                     node_type="comment",
+                    context=context,
                     metadata={"line": token.start[0]},
                 )
                 text_nodes.append(text_node)
@@ -457,6 +465,85 @@ class PythonProcessor(ContentProcessor):
         line = line.replace(f"'{original_text}'", f"'{escaped}'")
 
         lines[line_idx] = line
+
+    def _build_docstring_context(self, node: ast.AST, node_type: str) -> str:
+        """Build context string for a docstring.
+
+        Args:
+            node: The AST node containing the docstring.
+            node_type: Type of docstring (module, class, function).
+
+        Returns:
+            Context string describing the code structure.
+        """
+        context_parts: list[str] = []
+
+        if node_type == "module_docstring":
+            context_parts.append("module-level docstring")
+        elif node_type == "class_docstring" and isinstance(node, ast.ClassDef):
+            context_parts.append(f"docstring for class '{node.name}'")
+            # Add base classes if any
+            if node.bases:
+                bases = [self._get_name(b) for b in node.bases]
+                context_parts.append(f"inherits from: {', '.join(bases)}")
+        elif node_type == "function_docstring" and isinstance(
+            node, (ast.FunctionDef, ast.AsyncFunctionDef)
+        ):
+            func_type = "async function" if isinstance(node, ast.AsyncFunctionDef) else "function"
+            context_parts.append(f"docstring for {func_type} '{node.name}'")
+            # Add parameter names for context
+            args = [arg.arg for arg in node.args.args if arg.arg != "self"]
+            if args:
+                context_parts.append(f"parameters: {', '.join(args)}")
+            # Add return annotation if present
+            if node.returns:
+                context_parts.append(f"returns: {self._get_name(node.returns)}")
+
+        return " | ".join(context_parts) if context_parts else ""
+
+    def _build_comment_context(self, content: str, line_num: int) -> str:
+        """Build context string for a comment.
+
+        Args:
+            content: Full source code.
+            line_num: 1-indexed line number of the comment.
+
+        Returns:
+            Context string with surrounding code.
+        """
+        lines = content.splitlines()
+        context_parts: list[str] = []
+
+        # Get the line after the comment (what it's describing)
+        if line_num < len(lines):
+            next_line = lines[line_num].strip()
+            if next_line and not next_line.startswith("#"):
+                # Truncate long lines
+                if len(next_line) > 60:
+                    next_line = next_line[:60] + "..."
+                context_parts.append(f"before: {next_line}")
+
+        # Get the line before for additional context
+        if line_num > 1:
+            prev_line = lines[line_num - 2].strip()
+            if prev_line and not prev_line.startswith("#"):
+                if len(prev_line) > 60:
+                    prev_line = prev_line[:60] + "..."
+                context_parts.append(f"after: {prev_line}")
+
+        return " | ".join(context_parts) if context_parts else ""
+
+    def _get_name(self, node: ast.AST) -> str:
+        """Get a string representation of an AST node (for types, bases, etc.)."""
+        if isinstance(node, ast.Name):
+            return node.id
+        elif isinstance(node, ast.Attribute):
+            return f"{self._get_name(node.value)}.{node.attr}"
+        elif isinstance(node, ast.Subscript):
+            return f"{self._get_name(node.value)}[...]"
+        elif isinstance(node, ast.Constant):
+            return str(node.value)
+        return "..."
 
     def get_content_type(self) -> str:
         """Get the content type this processor handles.

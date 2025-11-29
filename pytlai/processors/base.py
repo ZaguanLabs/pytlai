@@ -14,6 +14,9 @@ class TextNode:
         text: The original text content.
         hash: SHA-256 hash of the trimmed text.
         node_type: Type of node (e.g., 'text', 'docstring', 'comment').
+        context: Surrounding context to help with translation disambiguation.
+            For HTML: parent tag, siblings, nearby text.
+            For Python: function/class name, surrounding code.
         metadata: Additional metadata about the node (line number, etc.).
     """
 
@@ -21,6 +24,7 @@ class TextNode:
     text: str
     hash: str
     node_type: str = "text"
+    context: str = ""
     metadata: dict[str, Any] = field(default_factory=dict)
 
 

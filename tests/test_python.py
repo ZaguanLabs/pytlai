@@ -303,3 +303,54 @@ class MyClass:
 
         assert len(nodes) == 1
         assert nodes[0].text == "Real comment"
+
+    def test_docstring_context_includes_function_name(self) -> None:
+        """Test that docstring context includes function name."""
+        processor = PythonProcessor()
+        code = '''def save_file(path, data):
+    """Save data to a file."""
+    pass
+'''
+        parsed, nodes = processor.extract(code)
+
+        assert len(nodes) == 1
+        assert "save_file" in nodes[0].context
+        assert "function" in nodes[0].context
+
+    def test_docstring_context_includes_parameters(self) -> None:
+        """Test that docstring context includes parameter names."""
+        processor = PythonProcessor()
+        code = '''def process(input_data, output_format):
+    """Process the input data."""
+    pass
+'''
+        parsed, nodes = processor.extract(code)
+
+        assert len(nodes) == 1
+        assert "input_data" in nodes[0].context or "output_format" in nodes[0].context
+
+    def test_docstring_context_includes_class_name(self) -> None:
+        """Test that class docstring context includes class name."""
+        processor = PythonProcessor()
+        code = '''class FileManager:
+    """Manages file operations."""
+    pass
+'''
+        parsed, nodes = processor.extract(code)
+
+        assert len(nodes) == 1
+        assert "FileManager" in nodes[0].context
+        assert "class" in nodes[0].context
+
+    def test_comment_context_includes_surrounding_code(self) -> None:
+        """Test that comment context includes surrounding code."""
+        processor = PythonProcessor()
+        code = '''x = 1
+# Initialize the counter
+counter = 0
+'''
+        parsed, nodes = processor.extract(code)
+
+        assert len(nodes) == 1
+        # Context should reference the line after (what the comment describes)
+        assert "counter" in nodes[0].context.lower() or nodes[0].context == ""

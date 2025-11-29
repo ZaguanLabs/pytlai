@@ -33,6 +33,7 @@ class AIProvider(ABC):
         source_lang: str = "en",
         excluded_terms: list[str] | None = None,
         context: str | None = None,
+        text_contexts: list[str] | None = None,
     ) -> list[str]:
         """Translate a batch of texts to the target language.
 
@@ -41,7 +42,10 @@ class AIProvider(ABC):
             target_lang: Target language code (e.g., 'es_ES', 'ja_JP').
             source_lang: Source language code. Defaults to 'en'.
             excluded_terms: List of terms that should not be translated.
-            context: Additional context to improve translation quality.
+            context: Additional global context to improve translation quality.
+            text_contexts: Per-text context strings for disambiguation.
+                Each entry corresponds to the text at the same index.
+                Example: ["in <button>", "docstring for function 'save'"]
 
         Returns:
             List of translated strings in the same order as input.

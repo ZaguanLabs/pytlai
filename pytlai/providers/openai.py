@@ -101,12 +101,22 @@ Translate the provided texts into idiomatic {target_name}.
 # Style Guide
 - **Natural Flow**: Avoid literal translations. Rephrase sentences to sound completely natural to a native speaker.
 - **Vocabulary**: Use precise, culturally relevant terminology. Avoid awkward "translationese" or robotic phrasing.
+- **Disambiguation**: Pay attention to any "context" hints provided with each text. Use them to choose the correct translation for ambiguous words. For example:
+  - "Run" in a <button> → action verb (execute)
+  - "Run" in a sports article → physical running
+  - "Post" in a blog → publish
+  - "Post" in mail context → postal mail
 - **Tone**: Maintain the original intent but adapt the wording to fit the target culture's expectations.
 - **HTML Safety**: Do NOT translate HTML tags, class names, IDs, or attributes.
 - **Interpolation**: Do NOT translate variables (e.g., {{{{name}}}}, {{count}}, %s, {{}}).
 - **Code**: Do NOT translate code snippets, function names, or technical identifiers.
 
-# Format
+# Input Format
+Input may be either:
+1. A simple array of strings: ["text1", "text2"]
+2. An object with items containing text and context: {{"items": [{{"text": "Run", "context": "in <button>"}}, ...]}}
+
+# Output Format
 Return ONLY a JSON object with a "translations" key containing an array of strings in the exact same order as the input.
 Example: {{"translations": ["translated text 1", "translated text 2"]}}"""
 
@@ -120,6 +130,38 @@ Do NOT translate the following terms. Keep them exactly as they appear in the so
 
         return prompt
 
+    def _build_user_message(
+        self,
+        texts: list[str],
+        text_contexts: list[str] | None = None,
+    ) -> str:
+        """Build the user message for translation.
+
+        If text_contexts are provided, formats each text with its context
+        to help the AI disambiguate translations.
+
+        Args:
+            texts: List of texts to translate.
+            text_contexts: Optional per-text context strings.
+
+        Returns:
+            JSON string for the API request.
+        """
+        if not text_contexts or not any(text_contexts):
+            # Simple format: just the texts
+            return json.dumps(texts, ensure_ascii=False)
+
+        # Format with context for disambiguation
+        items = []
+        for i, text in enumerate(texts):
+            ctx = text_contexts[i] if i < len(text_contexts) else ""
+            if ctx:
+                items.append({"text": text, "context": ctx})
+            else:
+                items.append({"text": text})
+
+        return json.dumps({"items": items}, ensure_ascii=False)
+
     def translate(
         self,
         texts: list[str],
@@ -127,6 +169,7 @@ Do NOT translate the following terms. Keep them exactly as they appear in the so
         source_lang: str = "en",
         excluded_terms: list[str] | None = None,
         context: str | None = None,
+        text_contexts: list[str] | None = None,
     ) -> list[str]:
         """Translate a batch of texts using OpenAI.
 
@@ -136,6 +179,7 @@ Do NOT translate the following terms. Keep them exactly as they appear in the so
             source_lang: Source language code. Defaults to 'en'.
             excluded_terms: List of terms that should not be translated.
             context: Additional context to improve translation quality.
+            text_contexts: Per-text context for disambiguation.
 
         Returns:
             List of translated strings in the same order as input.
@@ -150,12 +194,15 @@ Do NOT translate the following terms. Keep them exactly as they appear in the so
             target_lang, source_lang, excluded_terms, context
         )
 
+        # Build user message with optional per-text context
+        user_content = self._build_user_message(texts, text_contexts)
+
         try:
             response = self._client.chat.completions.create(
                 model=self._model,
                 messages=[
                     {"role": "system", "content": system_prompt},
-                    {"role": "user", "content": json.dumps(texts, ensure_ascii=False)},
+                    {"role": "user", "content": user_content},
                 ],
                 temperature=self._temperature,
                 response_format={"type": "json_object"},

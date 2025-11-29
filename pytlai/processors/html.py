@@ -81,11 +81,15 @@ class HTMLProcessor(ContentProcessor):
             node_id = str(uuid.uuid4())
             text_hash = hashlib.sha256(text.encode()).hexdigest()
 
+            # Build context from surrounding elements
+            context = self._build_context(element)
+
             text_node = TextNode(
                 id=node_id,
                 text=text,
                 hash=text_hash,
                 node_type="html_text",
+                context=context,
                 metadata={"parent_tag": element.parent.name if element.parent else None},
             )
             text_nodes.append(text_node)
@@ -138,6 +142,63 @@ class HTMLProcessor(ContentProcessor):
                 html_tag["dir"] = get_text_direction(target_lang)
 
         return str(parsed)
+
+    def _build_context(self, element: NavigableString) -> str:
+        """Build context string for a text node.
+
+        Captures surrounding information to help disambiguate translations:
+        - Parent tag and its attributes (class, id, aria-label)
+        - Sibling text content
+        - Ancestor structure
+
+        Args:
+            element: The NavigableString text node.
+
+        Returns:
+            Context string describing the element's surroundings.
+        """
+        context_parts: list[str] = []
+
+        parent = element.parent
+        if parent:
+            # Parent tag info
+            tag_info = f"<{parent.name}>"
+
+            # Useful attributes for context
+            if parent.get("class"):
+                classes = " ".join(parent.get("class", []))
+                tag_info = f"<{parent.name} class=\"{classes}\">"
+            elif parent.get("id"):
+                tag_info = f"<{parent.name} id=\"{parent.get('id')}\">"
+            elif parent.get("aria-label"):
+                tag_info = f"<{parent.name} aria-label=\"{parent.get('aria-label')}\">"
+
+            context_parts.append(f"in {tag_info}")
+
+            # Get sibling text for context (before and after)
+            siblings_text: list[str] = []
+            for sibling in parent.children:
+                if sibling == element:
+                    continue
+                sib_text = sibling.get_text(strip=True) if hasattr(sibling, "get_text") else str(sibling).strip()
+                if sib_text and len(sib_text) < 100:
+                    siblings_text.append(sib_text)
+
+            if siblings_text:
+                context_parts.append(f"with: {', '.join(siblings_text[:3])}")
+
+            # Ancestor path (up to 3 levels)
+            ancestors: list[str] = []
+            for i, ancestor in enumerate(parent.parents):
+                if i >= 3:
+                    break
+                if ancestor.name and ancestor.name not in ("html", "body", "[document]"):
+                    ancestors.append(ancestor.name)
+
+            if ancestors:
+                context_parts.append(f"inside: {' > '.join(reversed(ancestors))}")
+
+        return " | ".join(context_parts) if context_parts else ""
 
     def get_content_type(self) -> str:
         """Get the content type this processor handles.

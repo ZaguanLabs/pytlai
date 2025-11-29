@@ -216,3 +216,38 @@ class TestHTMLProcessor:
 
         assert h1_node.metadata.get("parent_tag") == "h1"
         assert p_node.metadata.get("parent_tag") == "p"
+
+    def test_context_includes_parent_tag(self) -> None:
+        """Test that context includes parent tag information."""
+        processor = HTMLProcessor()
+        html = '<button class="btn-primary">Run</button>'
+
+        parsed, nodes = processor.extract(html)
+
+        assert len(nodes) == 1
+        assert "button" in nodes[0].context
+        assert "btn-primary" in nodes[0].context
+
+    def test_context_includes_siblings(self) -> None:
+        """Test that context includes sibling text when in same parent."""
+        processor = HTMLProcessor()
+        # Use a structure where siblings are direct children of the same parent
+        html = '<div><span>Save</span><span>Cancel</span></div>'
+
+        parsed, nodes = processor.extract(html)
+
+        # Each node should have context about its siblings
+        save_node = next(n for n in nodes if n.text == "Save")
+        # The sibling "Cancel" should be in context
+        assert "Cancel" in save_node.context or "inside" in save_node.context
+
+    def test_context_includes_ancestors(self) -> None:
+        """Test that context includes ancestor path."""
+        processor = HTMLProcessor()
+        html = '<nav><ul><li><a>Home</a></li></ul></nav>'
+
+        parsed, nodes = processor.extract(html)
+
+        home_node = next(n for n in nodes if n.text == "Home")
+        # Should include ancestor path
+        assert "nav" in home_node.context or "ul" in home_node.context or "li" in home_node.context

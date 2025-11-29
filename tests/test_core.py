@@ -27,9 +27,11 @@ class MockProvider(AIProvider):
         source_lang: str = "en",
         excluded_terms: list[str] | None = None,
         context: str | None = None,
+        text_contexts: list[str] | None = None,
     ) -> list[str]:
         self.call_count += 1
         self.last_texts = texts
+        self.last_text_contexts = text_contexts
 
         # Return translations if provided, otherwise prefix with "Translated: "
         return [self.translations.get(t, f"Translated: {t}") for t in texts]
