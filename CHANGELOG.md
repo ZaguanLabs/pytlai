@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **Context-aware translation** — Captures surrounding context to disambiguate ambiguous words
+  - HTML: parent tag, CSS classes, sibling text, ancestor path
+  - Python: function/class name, parameters, return type, surrounding code
+  - Examples: "Run" → "Ejecutar" (in button) vs "Correr" (in sports article)
+
 ## [0.1.0] - 2024-11-29
 
 ### Added

@@ -9,6 +9,7 @@
 
 - **HTML Translation** — Extract text nodes, skip code/scripts, reconstruct with `lang`/`dir` attributes
 - **Python Translation** — Translate docstrings and comments while preserving code structure
+- **Context-Aware** — Captures surrounding context to disambiguate words like "Run", "Post", "Save"
 - **Smart Caching** — Memory, Redis, or file-based caching to avoid re-translating identical content
 - **Offline Mode** — Export to JSON/YAML/PO files, ship with your project, no AI at runtime
 - **40+ Languages** — Full support for major languages including RTL (Arabic, Hebrew, etc.)
@@ -153,6 +154,31 @@ translator = Pytlai(
 )
 ```
 
+## Context-Aware Translation
+
+Single words can translate differently depending on context. pytlai automatically captures surrounding information to help the AI choose the correct translation:
+
+```
+"Run" in <button class="execute-btn">  →  "Ejecutar" (execute)
+"Run" in a sports article              →  "Correr" (physical running)
+
+"Post" in a blog interface             →  "Publicar" (publish)
+"Post" in mail context                 →  "Correo" (postal mail)
+
+"Save" in a file dialog                →  "Guardar" (save file)
+"Save" in a banking app                →  "Ahorrar" (save money)
+```
+
+**Context captured automatically:**
+
+| Content | Context Information |
+|---------|---------------------|
+| HTML | Parent tag, CSS classes, sibling text, ancestor path |
+| Python docstring | Function/class name, parameters, return type |
+| Python comment | Surrounding code lines |
+
+This happens automatically — no configuration needed.
+
 ## Supported Languages
 
 **Tier 1 (High Quality):** English, German, Spanish, French, Italian, Japanese, Portuguese, Chinese (Simplified/Traditional)
@@ -206,6 +232,25 @@ ProcessedContent(
     total_nodes: int,      # Total translatable nodes found
 )
 ```
+
+### TextNode
+
+Internal representation of a translatable text (for advanced usage).
+
+```python
+TextNode(
+    id: str,               # Unique identifier
+    text: str,             # Original text content
+    hash: str,             # SHA-256 hash for caching
+    node_type: str,        # "html_text", "docstring", "comment", etc.
+    context: str,          # Surrounding context for disambiguation
+    metadata: dict,        # Additional info (line number, parent tag, etc.)
+)
+```
+
+The `context` field is automatically populated with surrounding information:
+- HTML: `"in <button class='primary'> | with: Cancel | inside: form > div"`
+- Python: `"docstring for function 'save_file' | parameters: path, data"`
 
 ## Contributing
 

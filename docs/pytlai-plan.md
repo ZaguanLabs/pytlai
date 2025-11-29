@@ -182,12 +182,48 @@ cache_key = sha256(text.strip()) + ":" + target_lang
 - **Ignored tags**: `script`, `style`, `code`, `pre`, `textarea`
 - **Skip attribute**: `data-no-translate`
 - **Output**: Set `lang` and `dir` attributes on `<html>`
+- **Context capture**: Parent tag, classes, siblings, ancestor path
 
 ### Python Processing
 - **Docstrings**: Module, class, function/method docstrings (triple-quoted strings as first statement)
 - **Comments**: Lines starting with `#` (excluding shebangs, encoding declarations, type comments)
 - **String literals** (optional): Strings marked with `# translate` comment or `_()` wrapper
 - **Preserve**: All code structure, indentation, line numbers where possible
+- **Context capture**: Function/class name, parameters, return type, surrounding code
+
+### Context-Based Disambiguation
+
+Single words can translate differently based on context. pytlai captures surrounding information to help the AI choose the correct translation:
+
+**HTML Context Examples:**
+```
+Text: "Run"
+Context: "in <button class='execute-btn'> | inside: nav > div"
+→ AI translates as "Ejecutar" (execute), not "Correr" (physical running)
+
+Text: "Post"  
+Context: "in <a> | with: Edit, Delete | inside: article"
+→ AI translates as "Publicar" (publish), not "Correo" (mail)
+```
+
+**Python Context Examples:**
+```
+Text: "Save data to disk."
+Context: "docstring for function 'write_file' | parameters: path, data"
+→ AI understands this is about file I/O
+
+Text: "Initialize the counter"
+Context: "before: counter = 0"
+→ AI sees the comment describes the next line
+```
+
+**Context Sources:**
+
+| Content Type | Context Captured |
+|--------------|------------------|
+| HTML | Parent tag with class/id, sibling text, ancestor path (up to 3 levels) |
+| Python docstring | Function/class name, parameters, return type annotation |
+| Python comment | Line before and after the comment (what it describes) |
 
 ### RTL Languages
 `ar`, `he`, `fa`, `ur`, `ps`, `sd`, `ug`
