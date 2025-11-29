@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.1] - 2024-11-29
+
+### Fixed
+
+- Corrected project URLs (Homepage, Repository, Issues)
+
 ## [0.1.0] - 2024-11-29
 
 ### Added
@@ -51,5 +57,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Requires Python 3.10+
 - OpenAI API key required for AI translations (not needed for cached/offline mode)
 
-[Unreleased]: https://github.com/pytlai/pytlai/compare/v0.1.0...HEAD
-[0.1.0]: https://github.com/pytlai/pytlai/releases/tag/v0.1.0
+[Unreleased]: https://github.com/ZaguanLabs/pytlai/compare/v0.1.1...HEAD
+[0.1.1]: https://github.com/ZaguanLabs/pytlai/releases/tag/v0.1.1
+[0.1.0]: https://github.com/ZaguanLabs/pytlai/releases/tag/v0.1.0
