@@ -92,7 +92,7 @@ class Pytlai:
             raise ValueError("Either target_lang or config must be provided")
 
         self._provider = provider
-        self._cache = cache or InMemoryCache()
+        self._cache = cache if cache is not None else InMemoryCache()
 
         # Initialize processors
         self._processors: dict[str, ContentProcessor] = {
