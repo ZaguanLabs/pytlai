@@ -61,7 +61,9 @@ class FileCache(TranslationCache):
         # Detect format from extension if not specified
         if file_format is None:
             ext = self._path.suffix.lower()
-            format_map = {".json": "json", ".yaml": "yaml", ".yml": "yaml", ".po": "po"}
+            format_map: dict[str, Literal["json", "yaml", "po"]] = {
+                ".json": "json", ".yaml": "yaml", ".yml": "yaml", ".po": "po"
+            }
             file_format = format_map.get(ext, "json")
 
         self._format: Literal["json", "yaml", "po"] = file_format
@@ -316,3 +318,8 @@ class FileCache(TranslationCache):
         """Set cache metadata."""
         self._meta = value
         self._dirty = True
+
+    def close(self) -> None:
+        """Save any pending changes and close the cache."""
+        if not self._read_only and self._dirty:
+            self.save()

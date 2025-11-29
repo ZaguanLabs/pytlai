@@ -246,6 +246,7 @@ def cmd_extract(args: argparse.Namespace) -> int:
             return 1
 
     # Extract
+    processor: HTMLProcessor | PythonProcessor
     if content_type == "html":
         processor = HTMLProcessor()
     else:

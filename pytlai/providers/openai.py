@@ -289,10 +289,5 @@ Do NOT translate the following terms. Keep them exactly as they appear in the so
         Returns:
             ModelInfo with model name and capabilities.
         """
-        capabilities = ["json_mode", "batch"]
-
-        # Add streaming capability for supported models
-        if "gpt-4" in self._model or "gpt-3.5" in self._model:
-            capabilities.append("streaming")
-
-        return ModelInfo(name=self._model, capabilities=capabilities)
+        model_name = self._model or self.DEFAULT_MODEL
+        return ModelInfo(name=model_name, capabilities=["json_mode", "batch", "streaming"])
