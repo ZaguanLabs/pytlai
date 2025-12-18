@@ -9,6 +9,7 @@ from pytlai.config import (
     CacheConfig,
     PythonOptions,
     TranslationConfig,
+    TranslationStyle,
 )
 from pytlai.core import Pytlai
 from pytlai.languages import (
@@ -19,7 +20,7 @@ from pytlai.languages import (
 )
 from pytlai.processors.base import ProcessedContent
 
-__version__ = "0.1.1"
+__version__ = "1.0.0"
 
 __all__ = [
     # Main class
@@ -29,6 +30,7 @@ __all__ = [
     "CacheConfig",
     "PythonOptions",
     "TranslationConfig",
+    "TranslationStyle",
     # Results
     "ProcessedContent",
     # Language utilities

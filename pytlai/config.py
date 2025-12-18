@@ -3,6 +3,9 @@
 from dataclasses import dataclass, field
 from typing import Literal
 
+# Translation style/register for tone control
+TranslationStyle = Literal["formal", "neutral", "casual", "marketing", "technical"]
+
 
 @dataclass
 class AIProviderConfig:
@@ -72,6 +75,11 @@ class TranslationConfig:
         excluded_terms: List of terms that should never be translated.
         context: Additional context for the AI to improve translation quality.
             Example: 'Technical documentation for a Python web framework'.
+        glossary: Optional dictionary of preferred translations for specific phrases.
+            Helps avoid literal translations of idioms and tech jargon.
+            Example: {"on the fly": "fortløpende", "cutting-edge": "banebrytende"}
+        style: Optional style/register for the translation tone.
+            Controls formality and tone of output. Default: 'neutral'.
         python_options: Options specific to Python source translation.
     """
 
@@ -79,6 +87,8 @@ class TranslationConfig:
     source_lang: str = "en"
     excluded_terms: list[str] = field(default_factory=list)
     context: str | None = None
+    glossary: dict[str, str] | None = None
+    style: TranslationStyle | None = None
     python_options: PythonOptions = field(default_factory=PythonOptions)
 
     def __post_init__(self) -> None:

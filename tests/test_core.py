@@ -28,6 +28,8 @@ class MockProvider(AIProvider):
         excluded_terms: list[str] | None = None,
         context: str | None = None,
         text_contexts: list[str] | None = None,
+        glossary: dict[str, str] | None = None,
+        style: str | None = None,
     ) -> list[str]:
         self.call_count += 1
         self.last_texts = texts

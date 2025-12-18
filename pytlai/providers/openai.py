@@ -6,8 +6,42 @@ import json
 import os
 from typing import Any
 
-from pytlai.languages import get_language_name
+from pytlai.config import TranslationStyle
+from pytlai.languages import get_language_name, normalize_lang_code
 from pytlai.providers.base import AIProvider, ModelInfo, TranslationError
+
+# Language-specific locale clarifications
+LOCALE_CLARIFICATIONS: dict[str, str] = {
+    # Norwegian variants
+    "nb_NO": "Use Norwegian Bokmål (nb-NO), not Nynorsk.",
+    "nb": "Use Norwegian Bokmål (nb-NO), not Nynorsk.",
+    "no": "Use Norwegian Bokmål (nb-NO).",
+    "nn_NO": "Use Norwegian Nynorsk (nn-NO), not Bokmål.",
+    "nn": "Use Norwegian Nynorsk (nn-NO), not Bokmål.",
+    # Chinese variants
+    "zh_CN": "Use Simplified Chinese characters.",
+    "zh_TW": "Use Traditional Chinese characters.",
+    "zh": "Use Simplified Chinese characters.",
+    # Portuguese variants
+    "pt_BR": "Use Brazilian Portuguese conventions.",
+    "pt_PT": "Use European Portuguese conventions.",
+    "pt": "Use Brazilian Portuguese conventions.",
+    # English variants
+    "en_GB": "Use British English spelling and conventions.",
+    "en_US": "Use American English spelling and conventions.",
+    # Spanish variants
+    "es_ES": "Use Castilian Spanish (Spain) conventions.",
+    "es_MX": "Use Mexican Spanish conventions.",
+}
+
+# Style descriptions for translation register
+STYLE_DESCRIPTIONS: dict[str, str] = {
+    "formal": "Use formal, professional language suitable for official documents or business communication.",
+    "neutral": "Use a neutral, professional tone suitable for general web content and documentation.",
+    "casual": "Use casual, conversational language suitable for blogs, social media, or friendly communication.",
+    "marketing": "Use persuasive, engaging language suitable for marketing copy, landing pages, and promotional content.",
+    "technical": "Use precise, technical language suitable for developer documentation, API references, and technical guides.",
+}
 
 
 class OpenAIProvider(AIProvider):
@@ -29,7 +63,7 @@ class OpenAIProvider(AIProvider):
         model: str | None = None,
         base_url: str | None = None,
         timeout: int = 30,
-        temperature: float = 0.3,
+        temperature: float = 0.1,
     ) -> None:
         """Initialize the OpenAI provider.
 
@@ -74,6 +108,8 @@ class OpenAIProvider(AIProvider):
         source_lang: str,
         excluded_terms: list[str] | None = None,
         context: str | None = None,
+        glossary: dict[str, str] | None = None,
+        style: TranslationStyle | None = None,
     ) -> str:
         """Build the system prompt for translation.
 
@@ -82,18 +118,26 @@ class OpenAIProvider(AIProvider):
             source_lang: Source language code.
             excluded_terms: Terms to exclude from translation.
             context: Additional context for the AI.
+            glossary: Optional preferred translations for specific phrases.
+            style: Optional style/register for the translation.
 
         Returns:
             The system prompt string.
         """
         target_name = get_language_name(target_lang)
         source_name = get_language_name(source_lang)
+        normalized_lang = normalize_lang_code(target_lang)
+        locale_hint = LOCALE_CLARIFICATIONS.get(target_lang) or LOCALE_CLARIFICATIONS.get(normalized_lang) or ""
+        style_desc = STYLE_DESCRIPTIONS.get(style or "neutral", STYLE_DESCRIPTIONS["neutral"])
 
         prompt = f"""# Role
 You are an expert native translator. You translate content from {source_name} to {target_name} with the fluency and nuance of a highly educated native speaker.
 
 # Context
-{context or "The content is general web or application content."}
+{f"The content is for: {context}. Adapt the tone to be appropriate for this context." if context else "The content is general web content."}
+
+# Register
+{style_desc}
 
 # Task
 Translate the provided texts into idiomatic {target_name}.
@@ -101,24 +145,37 @@ Translate the provided texts into idiomatic {target_name}.
 # Style Guide
 - **Natural Flow**: Avoid literal translations. Rephrase sentences to sound completely natural to a native speaker.
 - **Vocabulary**: Use precise, culturally relevant terminology. Avoid awkward "translationese" or robotic phrasing.
-- **Disambiguation**: Pay attention to any "context" hints provided with each text. Use them to choose the correct translation for ambiguous words. For example:
-  - "Run" in a <button> → action verb (execute)
-  - "Run" in a sports article → physical running
-  - "Post" in a blog → publish
-  - "Post" in mail context → postal mail
 - **Tone**: Maintain the original intent but adapt the wording to fit the target culture's expectations.
-- **HTML Safety**: Do NOT translate HTML tags, class names, IDs, or attributes.
-- **Interpolation**: Do NOT translate variables (e.g., {{{{name}}}}, {{count}}, %s, {{}}).
-- **Code**: Do NOT translate code snippets, function names, or technical identifiers.
+- **Idioms**: Never translate idioms literally. Replace English idioms with natural {target_name} equivalents.
+- **HTML/Code Safety**: Do NOT translate HTML tags, class names, IDs, attributes, URLs, email addresses, or content inside backticks or <code> blocks.
+- **Interpolation**: Do NOT translate variables or placeholders (e.g., {{{{name}}}}, {{count}}, %s, $1).
+- **Formatting**: Preserve meaningful whitespace (leading/trailing spaces, multiple spaces, newlines). Use idiomatic punctuation for the target language.
+- **Context Hints**: If you see {{{{__ctx__:...}}}}, use that hint to disambiguate the translation, then REMOVE the hint from your output."""
 
-# Input Format
+        # Add locale clarification if available
+        if locale_hint:
+            prompt += f"\n- **Locale**: {locale_hint}"
+
+        # Add user-provided glossary if available
+        if glossary:
+            prompt += "\n\n# Glossary\nWhen you encounter these phrases, prefer these translations (unless context demands otherwise):"
+            for source, target in glossary.items():
+                prompt += f'\n- "{source}" → {target}'
+
+        # Add quality check instruction
+        prompt += f"\n\n# Quality Check\nAfter translating each string, verify it sounds like native {target_name} and not a calque. If any phrase sounds like a literal translation, rewrite it naturally."
+
+        # Add format requirements
+        prompt += """\n\n# Input Format
 Input may be either:
 1. A simple array of strings: ["text1", "text2"]
-2. An object with items containing text and context: {{"items": [{{"text": "Run", "context": "in <button>"}}, ...]}}
+2. An object with items containing text and context: {"items": [{"text": "Run", "context": "in <button>"}, ...]}
 
 # Output Format
-Return ONLY a JSON object with a "translations" key containing an array of strings in the exact same order as the input.
-Example: {{"translations": ["translated text 1", "translated text 2"]}}"""
+Return a valid JSON object with a single key "translations" containing an array of strings in the exact same order as the input.
+Example: {"translations": ["translated text 1", "translated text 2"]}
+- Do NOT wrap in Markdown code blocks.
+- Do NOT include any {{__ctx__:...}} markers in your output."""
 
         if excluded_terms:
             terms_list = "\n".join(f"- {term}" for term in excluded_terms)
@@ -170,6 +227,8 @@ Do NOT translate the following terms. Keep them exactly as they appear in the so
         excluded_terms: list[str] | None = None,
         context: str | None = None,
         text_contexts: list[str] | None = None,
+        glossary: dict[str, str] | None = None,
+        style: TranslationStyle | None = None,
     ) -> list[str]:
         """Translate a batch of texts using OpenAI.
 
@@ -180,6 +239,8 @@ Do NOT translate the following terms. Keep them exactly as they appear in the so
             excluded_terms: List of terms that should not be translated.
             context: Additional context to improve translation quality.
             text_contexts: Per-text context for disambiguation.
+            glossary: Optional preferred translations for specific phrases.
+            style: Optional style/register for the translation.
 
         Returns:
             List of translated strings in the same order as input.
@@ -191,7 +252,7 @@ Do NOT translate the following terms. Keep them exactly as they appear in the so
             return []
 
         system_prompt = self._build_system_prompt(
-            target_lang, source_lang, excluded_terms, context
+            target_lang, source_lang, excluded_terms, context, glossary, style
         )
 
         # Build user message with optional per-text context

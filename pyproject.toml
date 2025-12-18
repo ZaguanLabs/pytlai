@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "pytlai"
-version = "0.1.1"
+version = "1.0.0"
 description = "Python Translation AI - Translate Python scripts or web pages on the fly to any human language"
 readme = "README.md"
 license = "MIT"
@@ -25,7 +25,7 @@ keywords = [
     "gettext",
 ]
 classifiers = [
-    "Development Status :: 3 - Alpha",
+    "Development Status :: 5 - Production/Stable",
     "Intended Audience :: Developers",
     "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",

@@ -4,40 +4,82 @@
 RTL_LANGUAGES: set[str] = {"ar", "he", "fa", "ur", "ps", "sd", "ug"}
 
 # Short code to full locale mapping
+# Includes both language codes (e.g., 'en') and country codes (e.g., 'gb')
 SHORT_CODE_MAP: dict[str, str] = {
+    # Tier 1 Languages
     "en": "en_US",
+    "gb": "en_GB",  # Great Britain -> British English
     "de": "de_DE",
     "es": "es_ES",
+    "mx": "es_MX",  # Mexico -> Mexican Spanish
     "fr": "fr_FR",
     "it": "it_IT",
     "ja": "ja_JP",
+    "jp": "ja_JP",  # Japan (country code) -> Japanese
     "pt": "pt_BR",
+    "br": "pt_BR",  # Brazil (country code) -> Brazilian Portuguese
     "zh": "zh_CN",
-    "ko": "ko_KR",
-    "ru": "ru_RU",
+    "cn": "zh_CN",  # China (country code) -> Simplified Chinese
+    "tw": "zh_TW",  # Taiwan -> Traditional Chinese
+    "hk": "zh_TW",  # Hong Kong -> Traditional Chinese
+    # Tier 2 Languages
     "ar": "ar_SA",
-    "he": "he_IL",
-    "fa": "fa_IR",
-    "hi": "hi_IN",
+    "sa": "ar_SA",  # Saudi Arabia (country code) -> Arabic
     "bn": "bn_BD",
-    "nl": "nl_NL",
-    "pl": "pl_PL",
-    "tr": "tr_TR",
-    "vi": "vi_VN",
-    "th": "th_TH",
-    "sv": "sv_SE",
-    "da": "da_DK",
-    "fi": "fi_FI",
-    "nb": "nb_NO",
-    "no": "nb_NO",
+    "bd": "bn_BD",  # Bangladesh (country code) -> Bengali
     "cs": "cs_CZ",
+    "cz": "cs_CZ",  # Czech Republic (country code) -> Czech
+    "da": "da_DK",
+    "dk": "da_DK",  # Denmark (country code) -> Danish
     "el": "el_GR",
+    "gr": "el_GR",  # Greece (country code) -> Greek
+    "fi": "fi_FI",
+    "he": "he_IL",
+    "il": "he_IL",  # Israel (country code) -> Hebrew
+    "iw": "he_IL",  # Legacy Hebrew code -> Hebrew
+    "hi": "hi_IN",
+    "in": "hi_IN",  # India (country code) -> Hindi
     "hu": "hu_HU",
-    "ro": "ro_RO",
-    "uk": "uk_UA",
     "id": "id_ID",
+    "ko": "ko_KR",
+    "kr": "ko_KR",  # South Korea (country code) -> Korean
+    "nl": "nl_NL",
+    "nb": "nb_NO",
+    "no": "nb_NO",  # Norwegian -> Bokmål
+    "nn": "nb_NO",  # Nynorsk -> Bokmål (closest supported)
+    "pl": "pl_PL",
+    "ro": "ro_RO",
+    "ru": "ru_RU",
+    "sv": "sv_SE",
+    "se": "sv_SE",  # Sweden (country code) -> Swedish
+    "th": "th_TH",
+    "tr": "tr_TR",
+    "uk": "uk_UA",
+    "ua": "ua_UA",  # Ukraine (country code) -> Ukrainian
+    "vi": "vi_VN",
+    "vn": "vi_VN",  # Vietnam (country code) -> Vietnamese
+    # Tier 3 Languages
+    "bg": "bg_BG",
+    "ca": "ca_ES",
+    "fa": "fa_IR",
+    "ir": "fa_IR",  # Iran (country code) -> Persian
+    "hr": "hr_HR",
+    "lt": "lt_LT",
+    "lv": "lv_LV",
     "ms": "ms_MY",
+    "my": "ms_MY",  # Malaysia (country code) -> Malay
+    "sk": "sk_SK",
+    "sl": "sl_SI",
+    "si": "sl_SI",  # Slovenia (country code) -> Slovenian
+    "sr": "sr_RS",
+    "rs": "sr_RS",  # Serbia (country code) -> Serbian
+    "sw": "sw_KE",
+    "ke": "sw_KE",  # Kenya (country code) -> Swahili
     "tl": "tl_PH",
+    "fil": "tl_PH",  # Filipino -> Tagalog
+    "ph": "tl_PH",  # Philippines (country code) -> Tagalog
+    "ur": "ur_PK",
+    "pk": "ur_PK",  # Pakistan (country code) -> Urdu
 }
 
 # Full language names for AI prompts

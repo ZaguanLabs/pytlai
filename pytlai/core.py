@@ -8,8 +8,8 @@ from typing import Literal
 
 from pytlai.cache.base import TranslationCache
 from pytlai.cache.memory import InMemoryCache
-from pytlai.config import PythonOptions, TranslationConfig
-from pytlai.languages import normalize_lang_code
+from pytlai.config import PythonOptions, TranslationConfig, TranslationStyle
+from pytlai.languages import get_text_direction, is_rtl, normalize_lang_code
 from pytlai.processors.base import ContentProcessor, ProcessedContent, TextNode
 from pytlai.processors.html import HTMLProcessor
 from pytlai.processors.python import PythonProcessor
@@ -294,6 +294,8 @@ class Pytlai:
                 excluded_terms=self._config.excluded_terms,
                 context=self._config.context,
                 text_contexts=text_contexts if any(text_contexts) else None,
+                glossary=self._config.glossary,
+                style=self._config.style,
             )
 
             # Cache and store results
@@ -337,18 +339,56 @@ class Pytlai:
         # Default to HTML for simple text
         return "html"
 
-    def is_source_lang(self, lang_code: str) -> bool:
+    def is_source_lang(self, lang_code: str | None = None) -> bool:
         """Check if a language code matches the source language.
 
+        When true, translation can be bypassed.
+
         Args:
-            lang_code: Language code to check.
+            lang_code: Language code to check. If None, uses target_lang.
 
         Returns:
             True if the language matches the source language.
         """
-        normalized = normalize_lang_code(lang_code)
-        source_normalized = normalize_lang_code(self.source_lang)
-        return normalized == source_normalized
+        check_lang = lang_code or self.target_lang
+        # Normalize: compare base language codes (e.g., 'en-US' -> 'en')
+        normalized_check = normalize_lang_code(check_lang).split("_")[0].lower()
+        normalized_source = normalize_lang_code(self.source_lang).split("_")[0].lower()
+        return normalized_check == normalized_source
+
+    def is_rtl(self, lang_code: str | None = None) -> bool:
+        """Check if the target language uses right-to-left text direction.
+
+        Useful for setting dir="rtl" on HTML elements.
+
+        Args:
+            lang_code: Language code to check. If None, uses target_lang.
+
+        Returns:
+            True if the language is RTL (Arabic, Hebrew, Persian, Urdu, etc.).
+        """
+        return is_rtl(lang_code or self.target_lang)
+
+    def get_dir(self, lang_code: str | None = None) -> str:
+        """Get the text direction for the target language.
+
+        Args:
+            lang_code: Language code to check. If None, uses target_lang.
+
+        Returns:
+            'rtl' or 'ltr'.
+        """
+        return get_text_direction(lang_code or self.target_lang)
+
+    @property
+    def glossary(self) -> dict[str, str] | None:
+        """Get the glossary of preferred translations."""
+        return self._config.glossary
+
+    @property
+    def style(self) -> TranslationStyle | None:
+        """Get the translation style/register."""
+        return self._config.style
 
     def close(self) -> None:
         """Close any resources (cache connections, etc.)."""

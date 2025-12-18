@@ -2,6 +2,10 @@
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from pytlai.config import TranslationStyle
 
 
 @dataclass
@@ -34,6 +38,8 @@ class AIProvider(ABC):
         excluded_terms: list[str] | None = None,
         context: str | None = None,
         text_contexts: list[str] | None = None,
+        glossary: dict[str, str] | None = None,
+        style: "TranslationStyle | None" = None,
     ) -> list[str]:
         """Translate a batch of texts to the target language.
 
@@ -46,6 +52,8 @@ class AIProvider(ABC):
             text_contexts: Per-text context strings for disambiguation.
                 Each entry corresponds to the text at the same index.
                 Example: ["in <button>", "docstring for function 'save'"]
+            glossary: Optional dictionary of preferred translations for specific phrases.
+            style: Optional style/register for the translation tone.
 
         Returns:
             List of translated strings in the same order as input.

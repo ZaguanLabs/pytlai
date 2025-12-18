@@ -7,6 +7,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.0] - 2024-12-18
+
+### Added
+
+- **Translation Style/Register**: New optional `style` parameter (`formal`, `neutral`, `casual`, `marketing`, `technical`) to control translation tone without hardcoding idioms
+- **User-provided Glossary**: Optional `glossary` field in config for preferred translations of specific phrases (e.g., `{"on the fly": "fortløpende"}`)
+- **RTL/Direction helpers**: `is_rtl()` and `get_dir()` methods on `Pytlai` class for text direction detection
+- Improved locale clarifications for Norwegian (Bokmål vs Nynorsk), Chinese (Simplified vs Traditional), Portuguese (Brazilian vs European), English (US vs UK), and Spanish variants
+- Expanded language code mappings with country codes (e.g., `gb` → `en_GB`, `mx` → `es_MX`, `jp` → `ja_JP`)
+
+### Changed
+
+- **JSON Output Format**: Prompt now requests `{ "translations": [...] }` object envelope to match `json_object` response format, improving reliability
+- **Temperature**: Lowered from 0.3 to 0.1 for more consistent, deterministic translations
+- **Whitespace Rule**: Relaxed from "preserve all whitespace" to "preserve meaningful whitespace" to allow idiomatic punctuation in target language
+- **HTML Safety Rules**: Enhanced to explicitly protect URLs, email addresses, backticks, and `<code>` blocks
+- **Quality Check**: Added self-verification instruction for native-sounding translations
+- **Idiom Handling**: Explicit instruction to never translate idioms literally
+
 ## [0.1.1] - 2024-11-29
 
 ### Fixed
@@ -57,6 +76,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Requires Python 3.10+
 - OpenAI API key required for AI translations (not needed for cached/offline mode)
 
-[Unreleased]: https://github.com/ZaguanLabs/pytlai/compare/v0.1.1...HEAD
+[Unreleased]: https://github.com/ZaguanLabs/pytlai/compare/v1.0.0...HEAD
+[1.0.0]: https://github.com/ZaguanLabs/pytlai/compare/v0.1.1...v1.0.0
 [0.1.1]: https://github.com/ZaguanLabs/pytlai/releases/tag/v0.1.1
 [0.1.0]: https://github.com/ZaguanLabs/pytlai/releases/tag/v0.1.0
